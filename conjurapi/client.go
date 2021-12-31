@@ -1,6 +1,7 @@
 package conjurapi
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -114,6 +115,38 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 		return NewClientFromTokenFile(config, authnTokenFile)
 	}
 
+	authnToken := os.Getenv("CONJUR_AUTHN_TOKEN")
+	if authnTokenFile != "" {
+		return NewClientFromToken(config, authnToken)
+	}
+
+	authnJwtServiceID := os.Getenv("CONJUR_AUTHN_JWT_SERVICE_ID")
+	if authnJwtServiceID != "" {
+
+		jwtToken, err := ioutil.ReadFile(os.Getenv("JWT_TOKEN_PATH"))
+		if err != nil {
+			return nil, err
+		}
+
+		authnJwtUrl := makeRouterURL(config.ApplianceURL, "authn-jwt", authnJwtServiceID, config.Account, "/authenticate").String()
+		req, err := http.NewRequest("POST", authnJwtUrl, bytes.NewReader(jwtToken))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		httpClient := &http.Client{}
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return NewClientFromToken(config, string(body))
+	}
+
 	loginPair, err := LoginPairFromEnv()
 	if err == nil && loginPair.Login != "" && loginPair.APIKey != "" {
 		return NewClientFromKey(config, *loginPair)
@@ -127,7 +160,7 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 	return nil, fmt.Errorf("Environment variables and machine identity files satisfying at least one authentication strategy must be present!")
 }
 
-func (c *Client) GetHttpClient() (*http.Client) {
+func (c *Client) GetHttpClient() *http.Client {
 	return c.httpClient
 }
 
@@ -135,7 +168,7 @@ func (c *Client) SetHttpClient(httpClient *http.Client) {
 	c.httpClient = httpClient
 }
 
-func (c *Client) GetConfig() (Config) {
+func (c *Client) GetConfig() Config {
 	return c.config
 }
 

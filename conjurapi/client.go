@@ -126,7 +126,7 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		jwtTokenString := string(jwtToken)
+		jwtTokenString := "jwt=" + string(jwtToken)
 		fmt.Println("JWT Token", jwtTokenString)
 
 		var httpClient *http.Client
@@ -154,6 +154,9 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 			return nil, err
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		req.Header.Set("Accept-Encoding", "base64")
+
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			return nil, err

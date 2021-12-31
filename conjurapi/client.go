@@ -122,7 +122,12 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 	authnJwtServiceID := os.Getenv("CONJUR_AUTHN_JWT_SERVICE_ID")
 	if authnJwtServiceID != "" {
 
-		jwtToken, err := ioutil.ReadFile(os.Getenv("JWT_TOKEN_PATH"))
+		jwtTokenPath := os.Getenv("JWT_TOKEN_PATH")
+		if jwtTokenPath == "" {
+			jwtTokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+		}
+
+		jwtToken, err := ioutil.ReadFile(jwtTokenPath)
 		if err != nil {
 			return nil, err
 		}

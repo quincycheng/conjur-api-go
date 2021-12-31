@@ -128,13 +128,26 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 			return nil, err
 		}
 
+		var httpClient *http.Client
+		if config.IsHttps() {
+			cert, err := config.ReadSSLCert()
+			if err != nil {
+				return nil, err
+			}
+			httpClient, err = newHTTPSClient(cert)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			httpClient = &http.Client{Timeout: time.Second * 10}
+		}
+
 		authnJwtUrl := makeRouterURL(config.ApplianceURL, "authn-jwt", authnJwtServiceID, config.Account, "/authenticate").String()
 		req, err := http.NewRequest("POST", authnJwtUrl, bytes.NewReader(jwtToken))
 		if err != nil {
 			return nil, err
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		httpClient := &http.Client{}
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			return nil, err

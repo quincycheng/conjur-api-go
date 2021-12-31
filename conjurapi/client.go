@@ -1,7 +1,6 @@
 package conjurapi
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -127,7 +126,8 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("JWT Token", jwtToken)
+		jwtTokenString := string(jwtToken)
+		fmt.Println("JWT Token", jwtTokenString)
 
 		var httpClient *http.Client
 		if config.IsHttps() {
@@ -145,11 +145,11 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 			httpClient = &http.Client{Timeout: time.Second * 10}
 		}
 
-		authnJwtUrl := makeRouterURL(config.ApplianceURL, "authn-jwt", authnJwtServiceID, config.Account, "/authenticate").String()
+		authnJwtUrl := makeRouterURL(config.ApplianceURL, "authn-jwt", authnJwtServiceID, config.Account, "authenticate").String()
 
 		fmt.Println("Authn-jwt url is ", authnJwtUrl)
 
-		req, err := http.NewRequest("POST", authnJwtUrl, bytes.NewReader(jwtToken))
+		req, err := http.NewRequest("POST", authnJwtUrl, strings.NewReader(jwtTokenString))
 		if err != nil {
 			return nil, err
 		}

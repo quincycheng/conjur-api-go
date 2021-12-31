@@ -155,7 +155,7 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		req.Header.Set("Accept-Encoding", "base64")
+		//req.Header.Set("Accept-Encoding", "base64")
 
 		resp, err := httpClient.Do(req)
 		if err != nil {

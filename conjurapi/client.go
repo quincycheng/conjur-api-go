@@ -127,6 +127,7 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("JWT Token", jwtToken)
 
 		var httpClient *http.Client
 		if config.IsHttps() {
@@ -138,11 +139,16 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 			if err != nil {
 				return nil, err
 			}
+			fmt.Println("HTTPS client is ready")
+
 		} else {
 			httpClient = &http.Client{Timeout: time.Second * 10}
 		}
 
 		authnJwtUrl := makeRouterURL(config.ApplianceURL, "authn-jwt", authnJwtServiceID, config.Account, "/authenticate").String()
+
+		fmt.Println("Authn-jwt url is ", authnJwtUrl)
+
 		req, err := http.NewRequest("POST", authnJwtUrl, bytes.NewReader(jwtToken))
 		if err != nil {
 			return nil, err
@@ -157,6 +163,8 @@ func NewClientFromEnvironment(config Config) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("Response Body is:", string(body))
+
 		return NewClientFromToken(config, string(body))
 	}
 
